@@ -1,0 +1,149 @@
+Département
+1. Dashboard Département
+Owner: Chef de département, Enseignant
+Prototype Description:
+A clean dashboard with a sidebar for navigation (links: Saisie des besoins, Consultation des affectations, Signalement de panne). The main area shows a summary: pending requests, recent notifications, and a table of current resource assignments. A notification bell and user profile menu are in the top bar.
+
+2. Saisie des besoins en ressources
+Owner: Enseignant
+Prototype Description:
+A form page with dropdowns for resource type (ordinateur, imprimante), text fields for quantity and specifications (e.g., CPU, RAM, etc.), and a comments box. A table below lists previously submitted needs with edit/delete buttons. Submit and reset buttons at the bottom.
+
+3. Consultation des besoins du département
+Owner: Chef de département
+Prototype Description:
+A table view listing all needs submitted by teachers, sortable by teacher or resource type. Each row shows resource details, status, and action buttons (view, edit, validate). A filter bar at the top allows quick searching.
+
+4. Modification/Validation des besoins
+Owner: Chef de département
+Prototype Description:
+A review page with a list of all needs, each with inline edit options (quantity, specs). Checkboxes for validation, and a “Validate All” button. A summary panel on the right shows total requested resources.
+
+5. Envoi des besoins au responsable
+Owner: Chef de département
+Prototype Description:
+A confirmation page showing the final list of needs. A “Send to Responsable” button at the bottom, with a modal confirmation dialog. Status messages indicate successful submission.
+
+6. Consultation des affectations de ressources
+Owner: Enseignant, Chef de département
+Prototype Description:
+A table listing all resources assigned to the user or department, with columns for resource type, specs, status, and assignment date. Filters for resource type and status. Details button for each resource.
+
+7. Signalement de panne
+Owner: Enseignant
+Prototype Description:
+A form with dropdown to select the resource, text area for problem description, date picker for occurrence, and urgency selector. Submit button at the bottom. A list of previously reported issues appears below.
+
+Responsable des ressources
+1. Dashboard Responsable
+Owner: Responsable des ressources
+Prototype Description:
+A dashboard with widgets: pending needs, open calls for offers, recent deliveries, and maintenance alerts. Sidebar for navigation. Top bar with notifications and profile.
+
+2. Réception et gestion des besoins des départements
+Owner: Responsable des ressources
+Prototype Description:
+A table of all department needs, grouped by department. Each entry shows resource details, status, and merge/edit options. Bulk action buttons for launching calls for offers.
+
+3. Création et gestion des appels d’offres
+Owner: Responsable des ressources
+Prototype Description:
+A form to create a new call for offers (fields: title, start/end dates, resource list). Below, a table lists current and past calls, with status, edit, and close buttons.
+
+4. Consultation des offres fournisseurs
+Owner: Responsable des ressources
+Prototype Description:
+A comparison table of all supplier offers for a call. Columns: supplier, resource, price, warranty, delivery date, total. Sorting and filtering options. Buttons to view details or select an offer.
+
+5. Sélection et notification des fournisseurs
+Owner: Responsable des ressources
+Prototype Description:
+A list of offers with radio buttons to select the winner. “Notify” button sends acceptance/rejection notifications. Modal for entering rejection reasons. Blacklist button for non-compliant suppliers.
+
+6. Gestion de la liste noire des fournisseurs
+Owner: Responsable des ressources
+Prototype Description:
+A table of blacklisted suppliers, with columns for company name, reason, date, and action buttons (remove from blacklist, view details).
+
+7. Réception des livraisons et attribution des numéros d’inventaire
+Owner: Responsable des ressources
+Prototype Description:
+A form to confirm delivery, enter inventory numbers/barcodes, and add new supplier info if needed. Table below lists recent deliveries and their status.
+
+8. Gestion des ressources
+Owner: Responsable des ressources
+Prototype Description:
+A searchable table of all resources, with columns for type, specs, status, assignment, and action buttons (edit, delete, view history).
+
+9. Affectation des ressources aux départements/personnes
+Owner: Responsable des ressources
+Prototype Description:
+A form to assign resources, with dropdowns for department/person, resource selection, and assignment date. Table below shows current assignments.
+
+10. Suivi des pannes et gestion des retours fournisseurs
+Owner: Responsable des ressources
+Prototype Description:
+A list of all reported malfunctions, with filters for status and department. Each entry has buttons for viewing the maintenance report, deciding on repair/return, and tracking status.
+
+Fournisseur
+1. Inscription/Connexion Fournisseur
+Owner: Fournisseur
+Prototype Description:
+A simple registration form (company name, password) and login form. After login, redirect to supplier dashboard.
+
+2. Consultation des appels d’offres ouverts
+Owner: Fournisseur
+Prototype Description:
+A list of open calls for offers, each with a “View Details” button. Details page shows required resources, quantities, and deadlines.
+
+3. Soumission d’une offre
+Owner: Fournisseur
+Prototype Description:
+A form to submit an offer: fields for each resource (brand, price, warranty, delivery date). “Submit Offer” button at the bottom. Summary of total offer on the side.
+
+4. Consultation de l’historique des offres
+Owner: Fournisseur
+Prototype Description:
+A table of all submitted offers, with columns for call, date, status (pending, accepted, rejected), and feedback. Details button for each offer.
+
+5. Réception des notifications
+Owner: Fournisseur
+Prototype Description:
+A notification center listing all messages (acceptance, rejection, blacklist), with icons for status and a details panel for each notification.
+
+Service de maintenance (Technicien)
+1. Dashboard Maintenance
+Owner: Technicien
+Prototype Description:
+A dashboard with widgets: pending interventions, recent reports, and quick links to report a new issue. Sidebar for navigation.
+
+2. Consultation des pannes signalées
+Owner: Technicien
+Prototype Description:
+A table of all reported malfunctions, with filters for department, resource, and urgency. Each row has a “View Details” and “Start Intervention” button.
+
+3. Saisie et envoi du constat de panne
+Owner: Technicien
+Prototype Description:
+A form to fill out the maintenance report: resource, explanation, date, frequency, type (hardware/software). “Submit Report” button at the bottom.
+
+4. Suivi des interventions
+Owner: Technicien
+Prototype Description:
+A list of all interventions assigned to the technician, with status (pending, in progress, completed), and action buttons to update or close the intervention.
+
+Administration (optionnel)
+1. Gestion des utilisateurs
+Owner: Administrateur
+Prototype Description:
+A table of all users, with columns for name, role, department, status, and action buttons (edit, delete, reset password). Add user button at the top.
+
+2. Gestion des départements
+Owner: Administrateur
+Prototype Description:
+A list of all departments, with details (name, head, number of users), and action buttons (edit, delete, assign head).
+
+3. Gestion des fournisseurs
+Owner: Administrateur
+Prototype Description:
+A table of all suppliers, with company details, contact info, blacklist status, and action buttons (edit, delete, blacklist).
