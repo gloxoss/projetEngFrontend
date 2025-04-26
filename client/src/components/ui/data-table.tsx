@@ -68,38 +68,38 @@ export function DataTable<T>({
   const filteredData = data.filter((item) => {
     // Apply all active filters
     for (const [filterName, filterValue] of Object.entries(currentFilters)) {
-      if (filterValue === "" || filterValue === "all") continue;
-      
+      if (filterValue === "all") continue;
+
       const filter = filters.find((f) => f.name === filterName);
       if (!filter) continue;
-      
+
       const option = filter.options.find((o) => o.value === filterValue);
       if (!option) continue;
-      
+
       if (!option.filter(item)) return false;
     }
-    
+
     // Apply search
     if (searchQuery && searchField) {
       const searchValue = searchField(item).toLowerCase();
       if (!searchValue.includes(searchQuery.toLowerCase())) return false;
     }
-    
+
     return true;
   });
 
   // Apply sorting
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortConfig.key || !sortConfig.direction) return 0;
-    
+
     const aValue = (typeof columns.find(col => col.accessor === sortConfig.key)?.accessor === 'function')
       ? String(a[sortConfig.key])
       : String(a[sortConfig.key]);
-      
+
     const bValue = (typeof columns.find(col => col.accessor === sortConfig.key)?.accessor === 'function')
       ? String(b[sortConfig.key])
       : String(b[sortConfig.key]);
-    
+
     if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
@@ -115,14 +115,14 @@ export function DataTable<T>({
   // Handle sorting
   const handleSort = (column: Column<T>) => {
     if (typeof column.accessor === "function" || !column.enableSorting) return;
-    
+
     let direction: "asc" | "desc" | null = "asc";
-    
+
     if (sortConfig.key === column.accessor) {
       if (sortConfig.direction === "asc") direction = "desc";
       else if (sortConfig.direction === "desc") direction = null;
     }
-    
+
     setSortConfig({
       key: direction ? column.accessor : null,
       direction,
@@ -132,13 +132,13 @@ export function DataTable<T>({
   // Handle row selection
   const handleRowSelect = (item: T, isSelected: boolean) => {
     let newSelectedItems: T[];
-    
+
     if (isSelected) {
       newSelectedItems = [...selectedItems, item];
     } else {
       newSelectedItems = selectedItems.filter((i) => i !== item);
     }
-    
+
     setSelectedItems(newSelectedItems);
     if (onSelectionChange) onSelectionChange(newSelectedItems);
   };
@@ -161,7 +161,7 @@ export function DataTable<T>({
       ...prev,
       [filterName]: value,
     }));
-    
+
     // Reset to first page when filtering
     setCurrentPage(1);
   };
@@ -169,7 +169,7 @@ export function DataTable<T>({
   // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
+
     // Reset to first page when searching
     setCurrentPage(1);
   };
@@ -181,14 +181,14 @@ export function DataTable<T>({
           {filters.map((filter) => (
             <div key={filter.name} className="w-full md:w-64">
               <Select
-                value={currentFilters[filter.name] || ""}
+                value={currentFilters[filter.name] || "all"}
                 onValueChange={(value) => handleFilterChange(filter.name, value)}
               >
                 <SelectTrigger id={`filter-${filter.name}`}>
                   <SelectValue placeholder={filter.name} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous</SelectItem>
+                  <SelectItem value="all">Tous</SelectItem>
                   {filter.options.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -198,7 +198,7 @@ export function DataTable<T>({
               </Select>
             </div>
           ))}
-          
+
           {searchField && (
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -215,7 +215,7 @@ export function DataTable<T>({
           )}
         </div>
       )}
-      
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -232,7 +232,7 @@ export function DataTable<T>({
                   />
                 </TableHead>
               )}
-              
+
               {columns.map((column, index) => (
                 <TableHead
                   key={index}
@@ -249,11 +249,11 @@ export function DataTable<T>({
                   </div>
                 </TableHead>
               ))}
-              
+
               {actions.length > 0 && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
-          
+
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
@@ -280,7 +280,7 @@ export function DataTable<T>({
                       />
                     </TableCell>
                   )}
-                  
+
                   {columns.map((column, colIndex) => (
                     <TableCell key={colIndex}>
                       {column.cell
@@ -290,14 +290,14 @@ export function DataTable<T>({
                         : String(item[column.accessor] || "")}
                     </TableCell>
                   ))}
-                  
+
                   {actions.length > 0 && (
                     <TableCell>
                       <div className="flex space-x-2">
                         {actions.map((action, actionIndex) => {
                           const isDisabled =
                             action.isDisabled && action.isDisabled(item);
-                          
+
                           return (
                             <Button
                               key={actionIndex}
@@ -325,7 +325,7 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
-      
+
       {totalPages > 1 && (
         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
@@ -343,7 +343,7 @@ export function DataTable<T>({
                 résultats
               </p>
             </div>
-            
+
             <div>
               <nav
                 className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
@@ -359,7 +359,7 @@ export function DataTable<T>({
                   <span className="sr-only">Précédent</span>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }).map(
                   (_, index) => {
                     // Display up to 5 pages, centered around current page
@@ -371,9 +371,9 @@ export function DataTable<T>({
                     } else {
                       pageNum = currentPage - 2 + index;
                     }
-                    
+
                     if (pageNum <= 0 || pageNum > totalPages) return null;
-                    
+
                     return (
                       <Button
                         key={pageNum}
@@ -391,7 +391,7 @@ export function DataTable<T>({
                     );
                   }
                 )}
-                
+
                 <Button
                   variant="outline"
                   size="sm"

@@ -4,44 +4,49 @@ import { useQuery } from "@tanstack/react-query";
 import { ResourceNeed, Resource, MaintenanceReport, Notification } from "@shared/schema";
 import { StatisticCard } from "@/components/ui/statistic-card";
 import { NotificationItem } from "@/components/ui/notification-item";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
-import {
-  ComputerIcon,
-  FileInput,
-  WrenchIcon,
-  CheckCircle,
+import { Link } from "wouter";
+import { 
+  ComputerIcon, 
+  FileInput, 
+  WrenchIcon, 
+  CheckCircle, 
   ArrowUpRight,
   Calendar,
   ClipboardList,
-  AlertTriangle
+  AlertTriangle,
+  ShoppingBag,
+  TruckIcon,
+  Package
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
-export default function Dashboard() {
+export default function ResourceManagerDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  // Redirect users to their role-specific dashboards
-  useEffect(() => {
-    if (user?.role === "resource_manager") {
-      navigate("/resource-manager/dashboard");
-    } else if (user?.role === "supplier") {
-      navigate("/supplier/dashboard");
-    } else if (user?.role === "technician") {
-      navigate("/technician/dashboard");
-    }
-  }, [user, navigate]);
+  // Redirect if not a resource manager
+  if (user?.role !== "resource_manager") {
+    toast({
+      title: "Accès refusé",
+      description: "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+      variant: "destructive",
+    });
+    navigate("/dashboard");
+    return null;
+  }
 
   const { data: resourceNeeds = [] } = useQuery<ResourceNeed[]>({
     queryKey: ["/api/resource-needs"],
@@ -59,16 +64,25 @@ export default function Dashboard() {
     queryKey: ["/api/notifications"],
   });
 
-  const isTeacherOrHead = user?.role === "teacher" || user?.role === "department_head";
-  const isDepartmentHead = user?.role === "department_head";
+  // Mock data for calls for offers (appels d'offres)
+  const callsForOffers = [
+    { id: 1, title: "Appel d'offres - Ordinateurs", status: "open", endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    { id: 2, title: "Appel d'offres - Imprimantes", status: "open", endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
+  ];
+
+  // Mock data for recent deliveries
+  const recentDeliveries = [
+    { id: 1, supplier: "Tech Solutions", date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), status: "received", items: 12 },
+    { id: 2, supplier: "Office Equipment Inc.", date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), status: "received", items: 5 },
+  ];
 
   const pendingNeeds = resourceNeeds.filter(
-    (need) => need.status === "pending"
+    (need) => need.status === "validated" || need.status === "sent"
   ).length;
 
-  const assignedResources = resources.length;
+  const openCalls = callsForOffers.filter(call => call.status === "open").length;
 
-  const reportedIssues = maintenanceReports.filter(
+  const pendingMaintenanceReports = maintenanceReports.filter(
     (report) => report.status !== "resolved"
   ).length;
 
@@ -80,15 +94,10 @@ export default function Dashboard() {
     }
   };
 
-  // Get only recent assignments for the dashboard table
-  const recentAssignments = resources
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
-
   return (
-    <AppLayout title="Dashboard">
+    <AppLayout title="Dashboard Responsable des Ressources">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatisticCard
           title="Besoins en attente"
           value={pendingNeeds}
@@ -99,26 +108,37 @@ export default function Dashboard() {
             direction: "up",
           }}
         />
-
+        
         <StatisticCard
-          title="Ressources affectées"
-          value={assignedResources}
-          icon={<ComputerIcon size={24} />}
+          title="Appels d'offres ouverts"
+          value={openCalls}
+          icon={<ShoppingBag size={24} />}
+          trend={{
+            value: 1,
+            label: "cette semaine",
+            direction: "up",
+          }}
+        />
+        
+        <StatisticCard
+          title="Livraisons récentes"
+          value={recentDeliveries.length}
+          icon={<TruckIcon size={24} />}
           trend={{
             value: 3,
             label: "ce mois",
             direction: "up",
           }}
         />
-
+        
         <StatisticCard
-          title="Pannes signalées"
-          value={reportedIssues}
+          title="Alertes maintenance"
+          value={pendingMaintenanceReports}
           icon={<WrenchIcon size={24} />}
           trend={{
             value: 1,
             label: "cette semaine",
-            direction: isDepartmentHead ? "up" : "down",
+            direction: "up",
           }}
         />
       </div>
@@ -158,19 +178,17 @@ export default function Dashboard() {
           </CardFooter>
         </Card>
 
-        {/* Recent Activity and Actions */}
+        {/* Pending Department Needs */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
-              <CardTitle>Affectations de ressources récentes</CardTitle>
-              {isTeacherOrHead && (
-                <Link href="/resource-assignment">
-                  <Button variant="link" size="sm" className="flex items-center gap-1">
-                    Voir tout
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              )}
+              <CardTitle>Besoins des départements en attente</CardTitle>
+              <Link href="/resource-manager/department-needs">
+                <Button variant="link" size="sm" className="flex items-center gap-1">
+                  Voir tout
+                  <ArrowUpRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -179,16 +197,16 @@ export default function Dashboard() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ressource
+                      Département
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Spécifications
+                      Quantité
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date d'affectation
+                      Date de demande
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Statut
@@ -196,45 +214,43 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {recentAssignments.map((resource) => (
-                    <tr key={resource.id}>
+                  {resourceNeeds.filter(need => need.status === "validated" || need.status === "sent").slice(0, 5).map((need) => (
+                    <tr key={need.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {resource.resourceType} {resource.inventoryNumber}
+                        {need.departmentName || "Informatique"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {resource.resourceType}
+                        {need.resourceType}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {resource.specifications}
+                        {need.quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(resource.createdAt).toLocaleDateString("fr-FR")}
+                        {new Date(need.createdAt).toLocaleDateString("fr-FR")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge
+                        <Badge 
                           variant={
-                            resource.status === "functional"
-                              ? "success"
-                              : resource.status === "maintenance"
-                              ? "warning"
-                              : "destructive"
+                            need.status === "validated" 
+                              ? "success" 
+                              : need.status === "sent" 
+                              ? "warning" 
+                              : "default"
                           }
                           className="flex items-center gap-1 px-2 py-1"
                         >
-                          {resource.status === "functional" && <CheckCircle className="w-3 h-3" />}
-                          {resource.status === "maintenance" && <WrenchIcon className="w-3 h-3" />}
-                          {resource.status === "out_of_order" && <AlertTriangle className="w-3 h-3" />}
-                          {resource.status === "functional" && "En fonction"}
-                          {resource.status === "maintenance" && "Maintenance"}
-                          {resource.status === "out_of_order" && "Hors service"}
+                          {need.status === "validated" && <CheckCircle className="w-3 h-3" />}
+                          {need.status === "sent" && <Package className="w-3 h-3" />}
+                          {need.status === "validated" && "Validé"}
+                          {need.status === "sent" && "Envoyé"}
                         </Badge>
                       </td>
                     </tr>
                   ))}
-                  {recentAssignments.length === 0 && (
+                  {resourceNeeds.filter(need => need.status === "validated" || need.status === "sent").length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                        Aucune ressource affectée
+                        Aucun besoin en attente
                       </td>
                     </tr>
                   )}
@@ -246,42 +262,38 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      {isTeacherOrHead && (
-        <div className="mt-6">
-          <h2 className="text-lg font-medium text-gray-800 mb-4">Actions rapides</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/resource-needs">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <FileInput className="h-8 w-8 text-primary" />
-                <span>Saisir un besoin</span>
-              </Button>
-            </Link>
-
-            <Link href="/maintenance-report">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <WrenchIcon className="h-8 w-8 text-primary" />
-                <span>Signaler une panne</span>
-              </Button>
-            </Link>
-
-            <Link href="/resource-assignment">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <ClipboardList className="h-8 w-8 text-primary" />
-                <span>Consulter les affectations</span>
-              </Button>
-            </Link>
-
-            {isDepartmentHead && (
-              <Link href="/department-needs">
-                <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                  <Calendar className="h-8 w-8 text-primary" />
-                  <span>Gérer les besoins</span>
-                </Button>
-              </Link>
-            )}
-          </div>
+      <div className="mt-6">
+        <h2 className="text-lg font-medium text-gray-800 mb-4">Actions rapides</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/resource-manager/department-needs">
+            <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+              <FileInput className="h-8 w-8 text-primary" />
+              <span>Gérer les besoins</span>
+            </Button>
+          </Link>
+          
+          <Link href="/resource-manager/calls-for-offers">
+            <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+              <ShoppingBag className="h-8 w-8 text-primary" />
+              <span>Appels d'offres</span>
+            </Button>
+          </Link>
+          
+          <Link href="/resource-manager/supplier-offers">
+            <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+              <ClipboardList className="h-8 w-8 text-primary" />
+              <span>Offres fournisseurs</span>
+            </Button>
+          </Link>
+          
+          <Link href="/resource-manager/resources">
+            <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+              <ComputerIcon className="h-8 w-8 text-primary" />
+              <span>Gestion des ressources</span>
+            </Button>
+          </Link>
         </div>
-      )}
+      </div>
     </AppLayout>
   );
 }

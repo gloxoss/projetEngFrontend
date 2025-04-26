@@ -295,7 +295,7 @@ export default function AuthPage() {
                           <FormLabel>Département</FormLabel>
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
-                            defaultValue={field.value.toString()}
+                            defaultValue={(field.value ?? '').toString()}
                           >
                             <FormControl>
                               <SelectTrigger>

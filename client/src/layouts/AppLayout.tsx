@@ -118,6 +118,9 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
 
   const isTeacherOrHead = user?.role === "teacher" || user?.role === "department_head";
   const isDepartmentHead = user?.role === "department_head";
+  const isSupplier = user?.role === "supplier";
+  const isTechnician = user?.role === "technician";
+  const isResourceManager = user?.role === "resource_manager";
 
   useEffect(() => {
     const handleResize = () => {
@@ -531,6 +534,174 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                   Signalement de panne
                 </a>
               </Link>
+            )}
+
+            {/* Supplier Navigation */}
+            {isSupplier && (
+              <>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
+                  Fournisseur
+                </p>
+                <Link href="/supplier/calls-for-offers">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/supplier/calls-for-offers")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                    Appels d'offres
+                  </a>
+                </Link>
+                <Link href="/supplier/offers">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/supplier/offers")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Mes offres
+                  </a>
+                </Link>
+                <Link href="/supplier/notifications">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/supplier/notifications")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                    Notifications
+                  </a>
+                </Link>
+              </>
+            )}
+
+            {/* Technician Navigation */}
+            {isTechnician && (
+              <>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
+                  Service de maintenance
+                </p>
+                <Link href="/technician/maintenance-reports">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/technician/maintenance-reports")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                    Pannes signalées
+                  </a>
+                </Link>
+                <Link href="/technician/interventions">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/technician/interventions")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                    </svg>
+                    Mes interventions
+                  </a>
+                </Link>
+                <Link href="/technician/report">
+                  <a
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                      isCurrentPath("/technician/report")
+                        ? "bg-primary-50 text-primary"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg
+                      className="mr-3 h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                      />
+                    </svg>
+                    Saisir un constat
+                  </a>
+                </Link>
+              </>
             )}
 
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">

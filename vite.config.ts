@@ -24,8 +24,25 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
+ build: {
+   outDir: path.resolve(import.meta.dirname, "dist/public"),
+   emptyOutDir: true,
+   rollupOptions: {
+     output: {
+       manualChunks(id) {
+         if (id.includes('node_modules')) {
+           if (id.includes('@radix-ui')) {
+             return 'radix-ui';
+           } else if (id.includes('@tanstack')) {
+             return 'tanstack';
+           } else if (id.includes('react')) {
+             return 'react';
+           }
+           return 'vendor';
+         }
+         return 'app';
+       },
+     },
+   },
+ },
 });

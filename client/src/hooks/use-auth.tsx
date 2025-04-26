@@ -27,17 +27,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     isLoading,
   } = useQuery<SelectUser | undefined, Error>({
-    queryKey: ["/api/user"],
+    queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    // Only attempt to fetch user data if we have a token
+    enabled: !!localStorage.getItem("jwt_token"),
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      const data = await res.json();
+
+      // Store JWT token in localStorage if it exists in the response
+      if (data.token) {
+        localStorage.setItem("jwt_token", data.token);
+      }
+
+      return data.user || data; // Return user data from response
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Connexion réussie",
         description: `Bienvenue, ${user.fullName}`,
@@ -55,11 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/auth/register", credentials);
+      const data = await res.json();
+
+      // Store JWT token in localStorage if it exists in the response
+      if (data.token) {
+        localStorage.setItem("jwt_token", data.token);
+      }
+
+      return data.user || data; // Return user data from response
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Inscription réussie",
         description: "Votre compte a été créé avec succès",
@@ -77,20 +93,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      // For Spring Boot, we might not need to call the server for logout
+      // Just remove the token from localStorage
+      localStorage.removeItem("jwt_token");
+
+      // But if your Spring Boot backend has a logout endpoint, call it
+      try {
+        await apiRequest("POST", "/api/auth/logout");
+      } catch (error) {
+        // Ignore errors during logout
+        console.log("Logout API call failed, but token was removed locally");
+      }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      queryClient.setQueryData(["/api/auth/user"], null);
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt !",
       });
     },
     onError: (error: Error) => {
+      // Even if the API call fails, we've removed the token locally
+      queryClient.setQueryData(["/api/auth/user"], null);
       toast({
-        title: "Échec de la déconnexion",
-        description: error.message,
-        variant: "destructive",
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
       });
     },
   });
