@@ -1,6 +1,6 @@
 {
-  "buildCommand": "node vercel-build.js",
-  "outputDirectory": "dist/public",
+  "buildCommand": "npm run build",
+  "outputDirectory": "client/dist",
   "framework": "vite",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
