@@ -2,13 +2,13 @@ import AppLayout from "@/layouts/AppLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,19 +16,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Calendar, 
-  ShoppingBag, 
-  Clock, 
-  CheckCircle, 
+import {
+  Calendar,
+  ShoppingBag,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   ArrowLeft,
   Plus,
   Trash2,
   Calculator
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { apiService } from "@/lib/apiService";
 
 export default function CallDetail() {
   const { id } = useParams();
@@ -38,13 +38,15 @@ export default function CallDetail() {
 
   // Fetch call for offers details
   const { data: call, isLoading: isLoadingCall } = useQuery({
-    queryKey: [`/api/calls-for-offers/${callId}`],
+    queryKey: ['callForOffers', callId],
+    queryFn: () => apiService.getCallForOffersById(callId),
     enabled: !isNaN(callId),
   });
 
   // Fetch existing offers for this call
   const { data: existingOffers = [], isLoading: isLoadingOffers } = useQuery({
-    queryKey: [`/api/calls-for-offers/${callId}/offers`],
+    queryKey: ['submissions', callId],
+    queryFn: () => apiService.getSubmissionsForCall(callId),
     enabled: !isNaN(callId),
   });
 
@@ -82,21 +84,17 @@ export default function CallDetail() {
 
   // Submit offer mutation
   const submitOfferMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/supplier-offers", {
-        callForOffersId: callId,
-        items: offerItems,
-      });
-      return response.json();
-    },
+    mutationFn: () => apiService.createSubmission(callId, {
+      items: offerItems,
+    }),
     onSuccess: () => {
       toast({
         title: "Offre soumise avec succès",
         description: "Votre offre a été enregistrée et sera examinée par le responsable des ressources.",
         variant: "default",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/supplier-offers"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/calls-for-offers/${callId}/offers`] });
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['callsForOffers'] });
       navigate("/supplier/offers");
     },
     onError: (error: Error) => {
@@ -111,12 +109,12 @@ export default function CallDetail() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
-    const isValid = offerItems.every(item => 
-      item.brand.trim() !== "" && 
-      item.unitPrice > 0 && 
-      item.warranty > 0 && 
+    const isValid = offerItems.every(item =>
+      item.brand.trim() !== "" &&
+      item.unitPrice > 0 &&
+      item.warranty > 0 &&
       item.deliveryDate
     );
 
@@ -161,8 +159,8 @@ export default function CallDetail() {
           <p className="mt-1 text-sm text-gray-500">
             L'appel d'offres que vous recherchez n'existe pas ou n'est plus disponible.
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-6"
             onClick={() => navigate("/supplier/calls-for-offers")}
           >
@@ -176,8 +174,8 @@ export default function CallDetail() {
 
   return (
     <AppLayout title={call.title}>
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="mb-6"
         onClick={() => navigate("/supplier/calls-for-offers")}
       >
@@ -191,8 +189,8 @@ export default function CallDetail() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle>Détails de l'appel</CardTitle>
-              <Badge 
-                variant={call.status === "open" ? "success" : "outline"}
+              <Badge
+                variant={call.status === "open" ? "default" : "outline"}
               >
                 {call.status === "open" ? "Ouvert" : "Fermé"}
               </Badge>
@@ -203,7 +201,7 @@ export default function CallDetail() {
               <h3 className="text-sm font-medium text-gray-500">Description</h3>
               <p className="mt-1 text-sm">{call.description}</p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">Date de début</h3>
               <p className="mt-1 text-sm flex items-center gap-2">
@@ -211,7 +209,7 @@ export default function CallDetail() {
                 {new Date(call.startDate).toLocaleDateString("fr-FR")}
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">Date limite</h3>
               <p className="mt-1 text-sm flex items-center gap-2">
@@ -219,7 +217,7 @@ export default function CallDetail() {
                 {new Date(call.endDate).toLocaleDateString("fr-FR")}
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">Ressources demandées</h3>
               <ul className="mt-2 space-y-2">
@@ -267,7 +265,7 @@ export default function CallDetail() {
                 <p className="mt-1 text-sm text-gray-500">
                   Vous pouvez consulter votre offre dans l'historique des offres.
                 </p>
-                <Button 
+                <Button
                   className="mt-4"
                   onClick={() => navigate("/supplier/offers")}
                 >
@@ -280,7 +278,7 @@ export default function CallDetail() {
                   {offerItems.map((item, index) => (
                     <div key={index} className="p-4 border rounded-lg">
                       <h3 className="font-medium mb-3">{item.resourceType} ({item.quantity} unités)</h3>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <Label htmlFor={`brand-${index}`}>Marque</Label>
@@ -292,7 +290,7 @@ export default function CallDetail() {
                             required
                           />
                         </div>
-                        
+
                         <div>
                           <Label htmlFor={`unitPrice-${index}`}>Prix unitaire (€)</Label>
                           <Input
@@ -306,7 +304,7 @@ export default function CallDetail() {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor={`warranty-${index}`}>Garantie (mois)</Label>
@@ -319,7 +317,7 @@ export default function CallDetail() {
                             required
                           />
                         </div>
-                        
+
                         <div>
                           <Label htmlFor={`deliveryDate-${index}`}>Date de livraison estimée</Label>
                           <Input
@@ -331,14 +329,14 @@ export default function CallDetail() {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="mt-3 text-right text-sm font-medium">
                         Sous-total: {(item.unitPrice * item.quantity).toLocaleString("fr-FR")} €
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -348,10 +346,10 @@ export default function CallDetail() {
                     <span className="text-xl font-bold">{totalPrice.toLocaleString("fr-FR")} €</span>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 flex justify-end">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     size="lg"
                     disabled={submitOfferMutation.isPending}
                   >

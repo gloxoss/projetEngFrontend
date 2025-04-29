@@ -1,15 +1,17 @@
 import AppLayout from "@/layouts/AppLayout";
 import { useAuth } from "@/hooks/use-auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import { useAppelOffres } from "@/hooks/use-appel-offres";
+import { parseISO, isValid } from "date-fns";
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   CardDescription,
   CardFooter
@@ -89,7 +91,45 @@ export default function CallsForOffersManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  
+  const [pageError, setPageError] = useState<Error | null>(null);
+
+  // Wrap the hook in a try-catch to prevent white screen on errors
+  let callsForOffers: CallForOffers[] = [];
+  let isLoading = false;
+  let error = null;
+  let createCallForOffers = (data: any) => {
+    console.error("API not initialized");
+    toast({
+      title: "Erreur",
+      description: "Impossible de créer l'appel d'offres. L'API n'est pas initialisée.",
+      variant: "destructive",
+    });
+    return Promise.reject("API not initialized");
+  };
+  let isSubmitting = false;
+  let closeCallForOffers = (id: number) => {
+    console.error("API not initialized");
+    toast({
+      title: "Erreur",
+      description: "Impossible de clôturer l'appel d'offres. L'API n'est pas initialisée.",
+      variant: "destructive",
+    });
+    return Promise.reject("API not initialized");
+  };
+
+  try {
+    const apiHook = useAppelOffres();
+    callsForOffers = apiHook.callsForOffers || [];
+    isLoading = apiHook.isLoading;
+    error = apiHook.error;
+    createCallForOffers = apiHook.createCallForOffers;
+    isSubmitting = apiHook.isCreating;
+    closeCallForOffers = apiHook.closeCallForOffers;
+  } catch (err) {
+    console.error("Error initializing API hook:", err);
+    setPageError(err instanceof Error ? err : new Error(String(err)));
+  }
+
   const [isCreating, setIsCreating] = useState(false);
   const [viewingCall, setViewingCall] = useState<CallForOffers | null>(null);
   const [editingCall, setEditingCall] = useState<CallForOffers | null>(null);
@@ -106,45 +146,16 @@ export default function CallsForOffersManager() {
     return null;
   }
 
-  // Mock data for calls for offers
-  const [callsForOffers, setCallsForOffers] = useState<CallForOffers[]>([
-    {
-      id: 1,
-      title: "Appel d'offres - Ordinateurs",
-      description: "Appel d'offres pour l'acquisition d'ordinateurs pour le département d'informatique",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: "open",
-      resources: [
-        { type: "Ordinateur", quantity: 10, specifications: "Intel Core i7, 16GB RAM, 512GB SSD" },
-      ],
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 2,
-      title: "Appel d'offres - Imprimantes",
-      description: "Appel d'offres pour l'acquisition d'imprimantes laser",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      status: "open",
-      resources: [
-        { type: "Imprimante", quantity: 5, specifications: "Laser, couleur, réseau" },
-      ],
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 3,
-      title: "Appel d'offres - Projecteurs",
-      description: "Appel d'offres pour l'acquisition de projecteurs pour les salles de cours",
-      startDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      status: "closed",
-      resources: [
-        { type: "Projecteur", quantity: 3, specifications: "4K, 5000 lumens" },
-      ],
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    },
-  ]);
+  // Handle API errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: `Une erreur est survenue lors du chargement des appels d'offres: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const form = useForm<CallForOffersFormValues>({
     resolver: zodResolver(callForOffersSchema),
@@ -184,27 +195,20 @@ export default function CallsForOffersManager() {
     }
 
     const values = form.getValues();
-    
+
     // Create a new call for offers
-    const newCall: CallForOffers = {
-      id: callsForOffers.length + 1,
+    const newCallData = {
       title: values.title,
       description: values.description,
       startDate: values.startDate,
       endDate: values.endDate,
       status: "open",
       resources: resourcesList,
-      createdAt: new Date(),
     };
 
-    setCallsForOffers([...callsForOffers, newCall]);
-    
-    toast({
-      title: "Appel d'offres créé",
-      description: "L'appel d'offres a été créé avec succès",
-      variant: "default",
-    });
-    
+    // Call the API to create the call for offers
+    createCallForOffers(newCallData);
+
     setIsCreating(false);
     setResourcesList([]);
     form.reset();
@@ -217,16 +221,31 @@ export default function CallsForOffersManager() {
   };
 
   const handleCloseCall = (id: number) => {
-    const updatedCalls = callsForOffers.map(call => 
-      call.id === id ? { ...call, status: "closed" as const } : call
-    );
-    setCallsForOffers(updatedCalls);
-    
-    toast({
-      title: "Appel d'offres clôturé",
-      description: "L'appel d'offres a été clôturé avec succès",
-      variant: "default",
-    });
+    // Call the API to close the call for offers
+    closeCallForOffers(id);
+  };
+
+  // Helper function to safely parse dates
+  const safeParseDate = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+
+    if (dateValue instanceof Date) {
+      return isValid(dateValue) ? dateValue : new Date();
+    }
+
+    if (typeof dateValue === 'string') {
+      try {
+        // Try to parse ISO string
+        const parsedDate = parseISO(dateValue);
+        return isValid(parsedDate) ? parsedDate : new Date();
+      } catch (e) {
+        console.error('Error parsing date:', dateValue, e);
+        return new Date();
+      }
+    }
+
+    // If all else fails, return current date
+    return new Date();
   };
 
   const getStatusBadge = (status: string) => {
@@ -268,6 +287,22 @@ export default function CallsForOffersManager() {
     }
   };
 
+  // Display error if there's a page-level error
+  if (pageError) {
+    return (
+      <AppLayout title="Gestion des appels d'offres">
+        <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-lg font-medium text-red-800 mb-2">Erreur lors du chargement de la page</h2>
+          <p className="text-red-600 mb-4">{pageError.message}</p>
+          <Button onClick={() => window.location.reload()}>
+            Rafraîchir la page
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title="Gestion des appels d'offres">
       <div className="space-y-6">
@@ -279,81 +314,95 @@ export default function CallsForOffersManager() {
         </div>
 
         {/* List of calls for offers */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Liste des appels d'offres</CardTitle>
-            <CardDescription>
-              Consultez et gérez les appels d'offres en cours et passés
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Titre</TableHead>
-                    <TableHead>Date de début</TableHead>
-                    <TableHead>Date de fin</TableHead>
-                    <TableHead>Ressources</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {callsForOffers.map((call) => (
-                    <TableRow key={call.id}>
-                      <TableCell className="font-medium">{call.title}</TableCell>
-                      <TableCell>{format(call.startDate, "dd/MM/yyyy", { locale: fr })}</TableCell>
-                      <TableCell>{format(call.endDate, "dd/MM/yyyy", { locale: fr })}</TableCell>
-                      <TableCell>{call.resources.length} type(s)</TableCell>
-                      <TableCell>{getStatusBadge(call.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="flex items-center gap-1 text-primary"
-                            onClick={() => setViewingCall(call)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {call.status === "draft" && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 text-primary"
-                              onClick={() => setEditingCall(call)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {call.status === "open" && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 text-primary"
-                              onClick={() => handleCloseCall(call.id)}
-                            >
-                              <X className="h-4 w-4" />
-                              Clôturer
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {callsForOffers.length === 0 && (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12 bg-gray-50 rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+            <span>Chargement des appels d'offres...</span>
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des appels d'offres</CardTitle>
+              <CardDescription>
+                Consultez et gérez les appels d'offres en cours et passés
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4">
-                        Aucun appel d'offres disponible
-                      </TableCell>
+                      <TableHead>Titre</TableHead>
+                      <TableHead>Date de début</TableHead>
+                      <TableHead>Date de fin</TableHead>
+                      <TableHead>Ressources</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {callsForOffers.map((call) => (
+                      <TableRow key={call.id}>
+                        <TableCell className="font-medium">{call.title}</TableCell>
+                        <TableCell>{format(safeParseDate(call.startDate), "dd/MM/yyyy", { locale: fr })}</TableCell>
+                        <TableCell>{format(safeParseDate(call.endDate), "dd/MM/yyyy", { locale: fr })}</TableCell>
+                        <TableCell>{call.resources?.length || 0} type(s)</TableCell>
+                        <TableCell>{getStatusBadge(call.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex items-center gap-1 text-primary"
+                              onClick={() => setViewingCall(call)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {call.status === "draft" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-1 text-primary"
+                                onClick={() => setEditingCall(call)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {call.status === "open" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-1 text-primary"
+                                onClick={() => handleCloseCall(call.id)}
+                                disabled={isSubmitting}
+                              >
+                                {isSubmitting ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <X className="h-4 w-4" />
+                                    Clôturer
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {callsForOffers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          Aucun appel d'offres disponible
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Create Call for Offers Dialog */}
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
@@ -364,7 +413,7 @@ export default function CallsForOffersManager() {
                 Remplissez les informations ci-dessous pour créer un nouvel appel d'offres
               </DialogDescription>
             </DialogHeader>
-            
+
             <Form {...form}>
               <form className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -474,10 +523,10 @@ export default function CallsForOffersManager() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Décrivez l'appel d'offres en détail..." 
-                          className="min-h-[100px]" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Décrivez l'appel d'offres en détail..."
+                          className="min-h-[100px]"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -487,7 +536,7 @@ export default function CallsForOffersManager() {
 
                 <div className="border-t pt-4">
                   <h3 className="text-lg font-medium mb-4">Ressources demandées</h3>
-                  
+
                   {resourcesList.length > 0 && (
                     <div className="mb-4 overflow-x-auto">
                       <Table>
@@ -506,9 +555,9 @@ export default function CallsForOffersManager() {
                               <TableCell>{resource.quantity}</TableCell>
                               <TableCell>{resource.specifications || "-"}</TableCell>
                               <TableCell>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="text-red-500 hover:text-red-700"
                                   onClick={() => handleRemoveResource(index)}
                                 >
@@ -577,9 +626,9 @@ export default function CallsForOffersManager() {
                     />
                   </div>
 
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     className="mt-4"
                     onClick={form.handleSubmit(onSubmit)}
                   >
@@ -598,11 +647,18 @@ export default function CallsForOffersManager() {
               }}>
                 Annuler
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateCallForOffers}
-                disabled={resourcesList.length === 0 || !form.formState.isValid}
+                disabled={resourcesList.length === 0 || !form.formState.isValid || isSubmitting}
               >
-                Créer l'appel d'offres
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  "Créer l'appel d'offres"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -615,10 +671,10 @@ export default function CallsForOffersManager() {
               <DialogHeader>
                 <DialogTitle>{viewingCall.title}</DialogTitle>
                 <DialogDescription>
-                  Créé le {format(viewingCall.createdAt, "PPP", { locale: fr })}
+                  Créé le {format(safeParseDate(viewingCall.createdAt), "PPP", { locale: fr })}
                 </DialogDescription>
               </DialogHeader>
-              
+
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div>
@@ -627,19 +683,19 @@ export default function CallsForOffersManager() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Date de début</p>
-                    <p>{format(viewingCall.startDate, "PPP", { locale: fr })}</p>
+                    <p>{format(safeParseDate(viewingCall.startDate), "PPP", { locale: fr })}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Date de fin</p>
-                    <p>{format(viewingCall.endDate, "PPP", { locale: fr })}</p>
+                    <p>{format(safeParseDate(viewingCall.endDate), "PPP", { locale: fr })}</p>
                   </div>
                 </div>
-                
+
                 <div>
                   <p className="text-sm font-medium text-gray-500">Description</p>
                   <p className="mt-1">{viewingCall.description}</p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-2">Ressources demandées</p>
                   <Table>
@@ -662,17 +718,27 @@ export default function CallsForOffersManager() {
                   </Table>
                 </div>
               </div>
-              
+
               <DialogFooter>
                 <Button variant="outline" onClick={() => setViewingCall(null)}>
                   Fermer
                 </Button>
                 {viewingCall.status === "open" && (
-                  <Button onClick={() => {
-                    handleCloseCall(viewingCall.id);
-                    setViewingCall(null);
-                  }}>
-                    Clôturer l'appel d'offres
+                  <Button
+                    onClick={() => {
+                      handleCloseCall(viewingCall.id);
+                      setViewingCall(null);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Clôture en cours...
+                      </>
+                    ) : (
+                      "Clôturer l'appel d'offres"
+                    )}
                   </Button>
                 )}
                 {viewingCall.status === "closed" && (

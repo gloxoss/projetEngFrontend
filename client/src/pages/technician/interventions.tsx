@@ -2,13 +2,13 @@ import AppLayout from "@/layouts/AppLayout";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "wouter";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Search, 
-  WrenchIcon, 
-  Clock, 
-  CheckCircle, 
+import {
+  Search,
+  WrenchIcon,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   Filter,
   ArrowRight
@@ -33,36 +33,39 @@ import {
 export default function Interventions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  
+
   // Fetch interventions
   const { data: interventions = [], isLoading } = useQuery({
-    queryKey: ["/api/interventions"],
+    queryKey: ['interventions'],
+    queryFn: () => apiService.getInterventions(),
   });
 
   // Fetch maintenance reports to get details
   const { data: maintenanceReports = [] } = useQuery({
-    queryKey: ["/api/maintenance-reports"],
+    queryKey: ['maintenanceReports'],
+    queryFn: () => apiService.getMaintenanceReports(),
   });
 
   // Fetch resources to get details
   const { data: resources = [] } = useQuery({
-    queryKey: ["/api/resources"],
+    queryKey: ['resources'],
+    queryFn: () => apiService.getResources(),
   });
 
   // Filter interventions based on search term and status
   const filteredInterventions = interventions.filter(intervention => {
     const report = maintenanceReports.find(r => r.id === intervention.maintenanceReportId);
     const resource = report ? resources.find(r => r.id === report.resourceId) : null;
-    
-    const matchesSearch = 
-      (resource && 
+
+    const matchesSearch =
+      (resource &&
         (resource.resourceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
          resource.inventoryNumber.toLowerCase().includes(searchTerm.toLowerCase()))) ||
       (report && report.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (intervention.notes && intervention.notes.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesStatus = statusFilter === "all" || intervention.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -105,8 +108,8 @@ export default function Interventions() {
             <WrenchIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-lg font-medium text-gray-900">Aucune intervention trouvée</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || statusFilter !== "all" 
-                ? "Essayez avec d'autres filtres." 
+              {searchTerm || statusFilter !== "all"
+                ? "Essayez avec d'autres filtres."
                 : "Vous n'avez pas encore d'interventions assignées."}
             </p>
             <Link href="/technician/maintenance-reports">
@@ -120,15 +123,15 @@ export default function Interventions() {
             {filteredInterventions.map((intervention) => {
               const report = maintenanceReports.find(r => r.id === intervention.maintenanceReportId);
               const resource = report ? resources.find(r => r.id === report.resourceId) : null;
-              
+
               return (
                 <Card key={intervention.id} className="overflow-hidden">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">
-                          {resource 
-                            ? `${resource.resourceType} (${resource.inventoryNumber})` 
+                          {resource
+                            ? `${resource.resourceType} (${resource.inventoryNumber})`
                             : `Intervention #${intervention.id}`}
                         </CardTitle>
                         <CardDescription className="mt-1">
@@ -140,12 +143,12 @@ export default function Interventions() {
                           </div>
                         </CardDescription>
                       </div>
-                      <Badge 
+                      <Badge
                         variant={
-                          intervention.status === "completed" 
-                            ? "success" 
-                            : intervention.status === "in_progress" 
-                            ? "outline" 
+                          intervention.status === "completed"
+                            ? "success"
+                            : intervention.status === "in_progress"
+                            ? "outline"
                             : "secondary"
                         }
                         className="ml-2"
@@ -165,7 +168,7 @@ export default function Interventions() {
                         </p>
                       </div>
                     )}
-                    
+
                     {intervention.notes && (
                       <div>
                         <h4 className="text-sm font-medium mb-1">Notes d'intervention:</h4>

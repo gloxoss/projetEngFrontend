@@ -2,13 +2,13 @@ import AppLayout from "@/layouts/AppLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Search, 
-  WrenchIcon, 
-  Clock, 
-  CheckCircle, 
+import {
+  Search,
+  WrenchIcon,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   Filter,
   Eye,
@@ -41,8 +41,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { apiService } from "@/lib/apiService";
 
 export default function MaintenanceReports() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,31 +51,30 @@ export default function MaintenanceReports() {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
+
   // Fetch maintenance reports
   const { data: maintenanceReports = [], isLoading } = useQuery({
-    queryKey: ["/api/maintenance-reports"],
+    queryKey: ['maintenanceReports'],
+    queryFn: () => apiService.getMaintenanceReports(),
   });
 
   // Fetch resources to get details
   const { data: resources = [] } = useQuery({
-    queryKey: ["/api/resources"],
+    queryKey: ['resources'],
+    queryFn: () => apiService.getResources(),
   });
 
   // Start intervention mutation
   const startInterventionMutation = useMutation({
-    mutationFn: async (reportId: number) => {
-      const response = await apiRequest("POST", `/api/maintenance-reports/${reportId}/start-intervention`);
-      return response.json();
-    },
+    mutationFn: (reportId: number) => apiService.startIntervention(reportId),
     onSuccess: (data) => {
       toast({
         title: "Intervention démarrée",
         description: "L'intervention a été créée avec succès.",
         variant: "default",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-reports"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/interventions"] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceReports'] });
+      queryClient.invalidateQueries({ queryKey: ['interventions'] });
       navigate(`/technician/interventions/${data.id}`);
     },
     onError: (error: Error) => {
@@ -95,15 +94,15 @@ export default function MaintenanceReports() {
   // Filter reports based on search term, urgency and status
   const filteredReports = maintenanceReports.filter(report => {
     const resource = resources.find(r => r.id === report.resourceId);
-    const matchesSearch = 
-      resource && 
+    const matchesSearch =
+      resource &&
       (resource.resourceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
        resource.inventoryNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
        report.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesUrgency = urgencyFilter === "all" || report.urgency === urgencyFilter;
     const matchesStatus = statusFilter === "all" || report.status === statusFilter;
-    
+
     return matchesSearch && matchesUrgency && matchesStatus;
   });
 
@@ -163,8 +162,8 @@ export default function MaintenanceReports() {
             <WrenchIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-lg font-medium text-gray-900">Aucune panne signalée</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || urgencyFilter !== "all" || statusFilter !== "all" 
-                ? "Essayez avec d'autres filtres." 
+              {searchTerm || urgencyFilter !== "all" || statusFilter !== "all"
+                ? "Essayez avec d'autres filtres."
                 : "Il n'y a actuellement aucune panne signalée."}
             </p>
           </div>
@@ -202,14 +201,14 @@ export default function MaintenanceReports() {
                         {new Date(report.occurrenceDate).toLocaleDateString("fr-FR")}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <Badge 
+                        <Badge
                           variant={
-                            report.urgency === "critical" 
-                              ? "destructive" 
-                              : report.urgency === "high" 
-                              ? "destructive" 
+                            report.urgency === "critical"
+                              ? "destructive"
+                              : report.urgency === "high"
+                              ? "destructive"
                               : report.urgency === "medium"
-                              ? "warning"
+                              ? "secondary"
                               : "outline"
                           }
                           className="flex items-center gap-1 px-2 py-1"
@@ -225,12 +224,12 @@ export default function MaintenanceReports() {
                         </Badge>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <Badge 
+                        <Badge
                           variant={
-                            report.status === "resolved" 
-                              ? "success" 
-                              : report.status === "in_progress" 
-                              ? "outline" 
+                            report.status === "resolved"
+                              ? "default"
+                              : report.status === "in_progress"
+                              ? "outline"
                               : "secondary"
                           }
                           className="flex items-center gap-1 px-2 py-1"
@@ -247,8 +246,8 @@ export default function MaintenanceReports() {
                         <div className="flex justify-end gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 className="flex items-center gap-1"
                                 onClick={() => setSelectedReport(report)}
@@ -264,7 +263,7 @@ export default function MaintenanceReports() {
                                   {resource ? `${resource.resourceType} (${resource.inventoryNumber})` : `Ressource #${report.resourceId}`}
                                 </DialogDescription>
                               </DialogHeader>
-                              
+
                               {selectedReport && (
                                 <div className="mt-4 space-y-4">
                                   <div className="flex justify-between items-center">
@@ -275,14 +274,14 @@ export default function MaintenanceReports() {
                                       </p>
                                     </div>
                                     <div className="flex gap-2">
-                                      <Badge 
+                                      <Badge
                                         variant={
-                                          selectedReport.urgency === "critical" 
-                                            ? "destructive" 
-                                            : selectedReport.urgency === "high" 
-                                            ? "destructive" 
+                                          selectedReport.urgency === "critical"
+                                            ? "destructive"
+                                            : selectedReport.urgency === "high"
+                                            ? "destructive"
                                             : selectedReport.urgency === "medium"
-                                            ? "warning"
+                                            ? "secondary"
                                             : "outline"
                                         }
                                       >
@@ -291,12 +290,12 @@ export default function MaintenanceReports() {
                                         {selectedReport.urgency === "medium" && "Moyenne"}
                                         {selectedReport.urgency === "low" && "Faible"}
                                       </Badge>
-                                      <Badge 
+                                      <Badge
                                         variant={
-                                          selectedReport.status === "resolved" 
-                                            ? "success" 
-                                            : selectedReport.status === "in_progress" 
-                                            ? "outline" 
+                                          selectedReport.status === "resolved"
+                                            ? "default"
+                                            : selectedReport.status === "in_progress"
+                                            ? "outline"
                                             : "secondary"
                                         }
                                       >
@@ -306,14 +305,14 @@ export default function MaintenanceReports() {
                                       </Badge>
                                     </div>
                                   </div>
-                                  
+
                                   <div>
                                     <h3 className="text-sm font-medium text-gray-500">Description</h3>
                                     <p className="mt-1 text-sm p-3 bg-gray-50 rounded-md">
                                       {selectedReport.description}
                                     </p>
                                   </div>
-                                  
+
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                       <h3 className="text-sm font-medium text-gray-500">Signalé par</h3>
@@ -332,10 +331,10 @@ export default function MaintenanceReports() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               <DialogFooter>
                                 {selectedReport && selectedReport.status === "pending" && (
-                                  <Button 
+                                  <Button
                                     onClick={() => {
                                       handleStartIntervention(selectedReport.id);
                                     }}
@@ -360,10 +359,10 @@ export default function MaintenanceReports() {
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
-                          
+
                           {report.status === "pending" && (
-                            <Button 
-                              variant="default" 
+                            <Button
+                              variant="default"
                               size="sm"
                               className="flex items-center gap-1"
                               onClick={() => handleStartIntervention(report.id)}

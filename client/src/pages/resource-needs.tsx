@@ -6,7 +6,8 @@ import { ResourceNeed, insertResourceNeedSchema } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { apiService } from "@/lib/apiService";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -31,14 +32,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 
-import { 
-  Loader2, 
-  Edit, 
-  Trash2, 
+import {
+  Loader2,
+  Edit,
+  Trash2,
   RefreshCw,
   CheckCircle,
   XCircle,
-  AlertCircle 
+  AlertCircle
 } from "lucide-react";
 import {
   AlertDialog,
@@ -53,12 +54,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Extended schema for the resource need form
-const resourceNeedFormSchema = insertResourceNeedSchema.extend({
-  resourceType: z.string().min(1, "Veuillez sélectionner un type de ressource"),
-  quantity: z.coerce.number().min(1, "La quantité doit être au moins 1"),
-  specifications: z.string().optional(),
-  comments: z.string().optional(),
-});
+const resourceNeedFormSchema = insertResourceNeedSchema
+  .omit({ userId: true, departmentId: true }) // We'll add these fields programmatically
+  .extend({
+    resourceType: z.string().min(1, "Veuillez sélectionner un type de ressource"),
+    quantity: z.coerce.number().min(1, "La quantité doit être au moins 1"),
+    specifications: z.string().optional(),
+    comments: z.string().optional(),
+  });
 
 type ResourceNeedFormValues = z.infer<typeof resourceNeedFormSchema>;
 
@@ -79,16 +82,28 @@ export default function ResourceNeeds() {
   });
 
   const { data: resourceNeeds = [] } = useQuery<ResourceNeed[]>({
-    queryKey: ["/api/resource-needs"],
+    queryKey: ['resourceNeeds'],
+    queryFn: () => apiService.getResourceNeeds(),
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: ResourceNeedFormValues) => {
-      const response = await apiRequest("POST", "/api/resource-needs", data);
-      return response.json();
+    mutationFn: (data: ResourceNeedFormValues) => {
+      // Add the userId and departmentId to the data
+      // Make sure we have a valid user ID - the backend API requires a valid teacher ID
+      if (!user?.id) {
+        throw new Error("Vous devez être connecté pour soumettre un besoin");
+      }
+
+      const completeData = {
+        ...data,
+        userId: user.id, // Use the authenticated user's ID
+        departmentId: user.departmentId || 1, // Use the user's department or default to 1
+      };
+      console.log('Submitting resource need with complete data:', completeData);
+      return apiService.createResourceNeed(completeData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/resource-needs"] });
+      queryClient.invalidateQueries({ queryKey: ['resourceNeeds'] });
       form.reset({
         resourceType: "",
         quantity: 1,
@@ -112,11 +127,25 @@ export default function ResourceNeeds() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; resourceNeed: Partial<ResourceNeed> }) => {
-      const response = await apiRequest("PUT", `/api/resource-needs/${data.id}`, data.resourceNeed);
-      return response.json();
+      // Since we don't have a specific update endpoint in the API, we'll use the create endpoint
+      // with the updated data and handle it on the server side
+
+      // Make sure we have a valid user ID - the backend API requires a valid teacher ID
+      if (!user?.id) {
+        throw new Error("Vous devez être connecté pour mettre à jour un besoin");
+      }
+
+      const completeData = {
+        ...data.resourceNeed,
+        id: data.id, // Include the ID so the server knows it's an update
+        userId: user.id, // Use the authenticated user's ID
+        departmentId: user.departmentId || 1, // Use the user's department or default to 1
+      };
+      console.log('Updating resource need with complete data:', completeData);
+      return apiService.createResourceNeed(completeData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/resource-needs"] });
+      queryClient.invalidateQueries({ queryKey: ['resourceNeeds'] });
       setEditingNeed(null);
       form.reset({
         resourceType: "",
@@ -141,11 +170,27 @@ export default function ResourceNeeds() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/resource-needs/${id}`);
-      return response.json();
+      // Since we don't have a specific delete endpoint in the API, we'll use the create endpoint
+      // with a special flag to indicate deletion
+
+      // Make sure we have a valid user ID - the backend API requires a valid teacher ID
+      if (!user?.id) {
+        throw new Error("Vous devez être connecté pour supprimer un besoin");
+      }
+
+      const deleteData = {
+        id: id,
+        _delete: true, // Special flag to indicate deletion
+        resourceType: "", // These fields are required by the schema but will be ignored
+        quantity: 0,     // on the server side for deletion
+        userId: user.id, // Use the authenticated user's ID
+        departmentId: user.departmentId || 1, // Use the user's department or default to 1
+      };
+      console.log('Deleting resource need with data:', deleteData);
+      return apiService.createResourceNeed(deleteData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/resource-needs"] });
+      queryClient.invalidateQueries({ queryKey: ['resourceNeeds'] });
       setNeedToDelete(null);
       toast({
         title: "Besoin supprimé",

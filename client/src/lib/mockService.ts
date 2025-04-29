@@ -98,6 +98,24 @@ const mockUsers: Record<string, User> = {
   },
 };
 
+// Add more mock users
+mockUsers.chef_de_departement = {
+  id: 6,
+  username: "chef_de_departement",
+  password: "password",
+  fullName: "Ahmed Ali",
+  role: "chef_de_departement",
+  departmentId: 1,
+};
+mockUsers.enseignant = {
+  id: 7,
+  username: "enseignant",
+  password: "password",
+  fullName: "Fatima Zahra",
+  role: "enseignant",
+  departmentId: 2,
+};
+
 // Mock departments
 const mockDepartments: Department[] = [
   {
@@ -156,6 +174,32 @@ const mockResourceNeeds: ResourceNeed[] = [
     updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
   },
 ];
+
+// Add more mock resource needs
+mockResourceNeeds.push({
+  id: 4,
+  resourceType: "Tableau interactif",
+  quantity: 1,
+  specifications: "Tactile, 80 pouces",
+  comments: "Pour la salle de réunion",
+  status: "approved",
+  userId: 2,
+  departmentId: 1,
+  createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000),
+  updatedAt: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000),
+});
+mockResourceNeeds.push({
+  id: 5,
+  resourceType: "Licence logiciel",
+  quantity: 20,
+  specifications: "Suite bureautique",
+  comments: "Pour les étudiants",
+  status: "denied",
+  userId: 3,
+  departmentId: 2,
+  createdAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
+  updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+});
 
 // Mock resources
 const mockResources: Resource[] = [
@@ -232,6 +276,33 @@ const mockMaintenanceReports: MaintenanceReport[] = [
     updatedAt: null,
   },
 ];
+
+// Add more mock maintenance reports
+mockMaintenanceReports.push({
+  id: 3,
+  resourceId: 1,
+  description: "L'ordinateur surchauffe",
+  occurrenceDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+  urgency: "high",
+  status: "pending",
+  reportedById: 3,
+  assignedToId: null,
+  createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+  updatedAt: null,
+});
+mockMaintenanceReports.push({
+  id: 4,
+  resourceId: 2,
+  description: "L'imprimante ne fonctionne plus",
+  occurrenceDate: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+  urgency: "low",
+  status: "completed",
+  reportedById: 4,
+  assignedToId: 4,
+  createdAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000),
+  updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+  resolution: "Remplacement de la cartouche d'encre",
+});
 
 // Mock calls for offers
 const mockCallsForOffers: CallForOffers[] = [

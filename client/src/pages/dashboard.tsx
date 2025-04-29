@@ -25,8 +25,87 @@ import {
   ClipboardList,
   AlertTriangle
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { useEffect } from "react";
+import { RoleGuard, PermissionGuard } from "@/components/auth";
+
+// Mock data for frontend-only testing
+const mockResourceNeeds: ResourceNeed[] = [
+  {
+    id: 1,
+    resourceType: "Ordinateur",
+    quantity: 5,
+    specifications: "i7, 16GB RAM",
+    comments: "Pour le laboratoire",
+    status: "pending",
+    userId: 2,
+    departmentId: 1,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+  {
+    id: 2,
+    resourceType: "Projecteur",
+    quantity: 2,
+    specifications: "4K, HDMI",
+    comments: "Pour les salles de cours",
+    status: "validated",
+    userId: 2,
+    departmentId: 1,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+];
+
+const mockResources: Resource[] = [
+  {
+    id: 1,
+    resourceType: "Ordinateur",
+    inventoryNumber: "PC-001",
+    specifications: "Dell XPS, i7, 16GB RAM",
+    status: "functional",
+    assignedToId: 2,
+    departmentId: 1,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+  {
+    id: 2,
+    resourceType: "Projecteur",
+    inventoryNumber: "PROJ-001",
+    specifications: "Epson 4K",
+    status: "maintenance",
+    assignedToId: 3,
+    departmentId: 1,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+  {
+    id: 3,
+    resourceType: "Imprimante",
+    inventoryNumber: "PRINT-001",
+    specifications: "HP LaserJet",
+    status: "out_of_order",
+    assignedToId: null,
+    departmentId: 1,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+];
+
+const mockMaintenanceReports: MaintenanceReport[] = [
+  {
+    id: 1,
+    resourceId: 2,
+    description: "Projecteur ne s'allume pas",
+    occurrenceDate: new Date(),
+    urgency: "high",
+    status: "pending",
+    reportedById: 2,
+    assignedToId: null,
+    createdAt: new Date(),
+    updatedAt: null,
+  },
+];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -43,24 +122,16 @@ export default function Dashboard() {
     }
   }, [user, navigate]);
 
-  const { data: resourceNeeds = [] } = useQuery<ResourceNeed[]>({
-    queryKey: ["/api/resource-needs"],
-  });
+  // Use mock data for frontend-only testing
+  const resourceNeeds = mockResourceNeeds;
+  const resources = mockResources;
+  const maintenanceReports = mockMaintenanceReports;
+  const isLoadingNeeds = false;
+  const isLoadingResources = false;
+  const isLoadingReports = false;
 
-  const { data: resources = [] } = useQuery<Resource[]>({
-    queryKey: ["/api/resources"],
-  });
-
-  const { data: maintenanceReports = [] } = useQuery<MaintenanceReport[]>({
-    queryKey: ["/api/maintenance-reports"],
-  });
-
-  const { data: notifications = [] } = useQuery<Notification[]>({
-    queryKey: ["/api/notifications"],
-  });
-
-  const isTeacherOrHead = user?.role === "teacher" || user?.role === "department_head";
-  const isDepartmentHead = user?.role === "department_head";
+  // For now, we don't have a notifications endpoint
+  const notifications: Notification[] = [];
 
   const pendingNeeds = resourceNeeds.filter(
     (need) => need.status === "pending"
@@ -73,11 +144,7 @@ export default function Dashboard() {
   ).length;
 
   const markNotificationAsRead = async (id: number) => {
-    try {
-      await apiRequest("POST", `/api/notifications/${id}/read`);
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-    }
+    console.log("Marking notification as read:", id);
   };
 
   // Get only recent assignments for the dashboard table
@@ -98,6 +165,7 @@ export default function Dashboard() {
             label: "depuis hier",
             direction: "up",
           }}
+          isLoading={isLoadingNeeds}
         />
 
         <StatisticCard
@@ -109,6 +177,7 @@ export default function Dashboard() {
             label: "ce mois",
             direction: "up",
           }}
+          isLoading={isLoadingResources}
         />
 
         <StatisticCard
@@ -118,8 +187,9 @@ export default function Dashboard() {
           trend={{
             value: 1,
             label: "cette semaine",
-            direction: isDepartmentHead ? "up" : "down",
+            direction: "up",
           }}
+          isLoading={isLoadingReports}
         />
       </div>
 
@@ -163,14 +233,14 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle>Affectations de ressources récentes</CardTitle>
-              {isTeacherOrHead && (
+              <PermissionGuard permission="view_resources">
                 <Link href="/resource-assignment">
                   <Button variant="link" size="sm" className="flex items-center gap-1">
                     Voir tout
                     <ArrowUpRight className="h-4 w-4" />
                   </Button>
                 </Link>
-              )}
+              </PermissionGuard>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -214,9 +284,9 @@ export default function Dashboard() {
                         <Badge
                           variant={
                             resource.status === "functional"
-                              ? "success"
+                              ? "default"
                               : resource.status === "maintenance"
-                              ? "warning"
+                              ? "secondary"
                               : "destructive"
                           }
                           className="flex items-center gap-1 px-2 py-1"
@@ -245,43 +315,51 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      {isTeacherOrHead && (
+      {/* Quick Actions - Only for teachers and department heads */}
+      <RoleGuard roles={["teacher", "department_head"]}>
         <div className="mt-6">
           <h2 className="text-lg font-medium text-gray-800 mb-4">Actions rapides</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/resource-needs">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <FileInput className="h-8 w-8 text-primary" />
-                <span>Saisir un besoin</span>
-              </Button>
-            </Link>
-
-            <Link href="/maintenance-report">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <WrenchIcon className="h-8 w-8 text-primary" />
-                <span>Signaler une panne</span>
-              </Button>
-            </Link>
-
-            <Link href="/resource-assignment">
-              <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                <ClipboardList className="h-8 w-8 text-primary" />
-                <span>Consulter les affectations</span>
-              </Button>
-            </Link>
-
-            {isDepartmentHead && (
-              <Link href="/department-needs">
+            <PermissionGuard permission="request_resources">
+              <Link href="/resource-needs">
                 <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
-                  <Calendar className="h-8 w-8 text-primary" />
-                  <span>Gérer les besoins</span>
+                  <FileInput className="h-8 w-8 text-primary" />
+                  <span>Saisir un besoin</span>
                 </Button>
               </Link>
-            )}
+            </PermissionGuard>
+
+            <PermissionGuard permission="report_maintenance">
+              <Link href="/maintenance-report">
+                <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+                  <WrenchIcon className="h-8 w-8 text-primary" />
+                  <span>Signaler une panne</span>
+                </Button>
+              </Link>
+            </PermissionGuard>
+
+            <PermissionGuard permission="view_resources">
+              <Link href="/resource-assignment">
+                <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+                  <ClipboardList className="h-8 w-8 text-primary" />
+                  <span>Consulter les affectations</span>
+                </Button>
+              </Link>
+            </PermissionGuard>
+
+            <RoleGuard roles={["department_head"]}>
+              <PermissionGuard permission="view_department_needs">
+                <Link href="/department-needs">
+                  <Button variant="outline" className="w-full h-full p-6 flex flex-col items-center justify-center gap-3">
+                    <Calendar className="h-8 w-8 text-primary" />
+                    <span>Gérer les besoins</span>
+                  </Button>
+                </Link>
+              </PermissionGuard>
+            </RoleGuard>
           </div>
         </div>
-      )}
+      </RoleGuard>
     </AppLayout>
   );
 }

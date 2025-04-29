@@ -395,14 +395,11 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Général
             </p>
-            <Link href="/dashboard">
-              <a
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+            <Link href="/dashboard" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                   isCurrentPath("/dashboard")
                     ? "bg-primary-50 text-primary"
                     : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
+                }`}>
                 <svg
                   className="mr-3 h-5 w-5"
                   xmlns="http://www.w3.org/2000/svg"
@@ -418,21 +415,17 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                   />
                 </svg>
                 Dashboard
-              </a>
             </Link>
 
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
               Gestion des Ressources
             </p>
             {isTeacherOrHead && (
-              <Link href="/resource-needs">
-                <a
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+              <Link href="/resource-needs" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                     isCurrentPath("/resource-needs")
                       ? "bg-primary-50 text-primary"
                       : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
+                  }`}>
                   <svg
                     className="mr-3 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -448,19 +441,15 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                     />
                   </svg>
                   Saisie des besoins
-                </a>
               </Link>
             )}
 
             {isDepartmentHead && (
-              <Link href="/department-needs">
-                <a
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+              <Link href="/department-needs" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                     isCurrentPath("/department-needs")
                       ? "bg-primary-50 text-primary"
                       : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
+                  }`}>
                   <svg
                     className="mr-3 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -476,19 +465,15 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                     />
                   </svg>
                   Consultation des besoins
-                </a>
               </Link>
             )}
 
             {isTeacherOrHead && (
-              <Link href="/resource-assignment">
-                <a
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+              <Link href="/resource-assignment" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                     isCurrentPath("/resource-assignment")
                       ? "bg-primary-50 text-primary"
                       : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
+                  }`}>
                   <svg
                     className="mr-3 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -504,19 +489,15 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                     />
                   </svg>
                   Consultation des affectations
-                </a>
               </Link>
             )}
 
             {isTeacherOrHead && (
-              <Link href="/maintenance-report">
-                <a
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+              <Link href="/maintenance-report" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                     isCurrentPath("/maintenance-report")
                       ? "bg-primary-50 text-primary"
                       : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
+                  }`}>
                   <svg
                     className="mr-3 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -532,7 +513,6 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                     />
                   </svg>
                   Signalement de panne
-                </a>
               </Link>
             )}
 
@@ -542,14 +522,11 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
                   Fournisseur
                 </p>
-                <Link href="/supplier/calls-for-offers">
-                  <a
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                <Link href="/supplier/calls-for-offers" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                       isCurrentPath("/supplier/calls-for-offers")
                         ? "bg-primary-50 text-primary"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+                    }`}>
                     <svg
                       className="mr-3 h-5 w-5"
                       xmlns="http://www.w3.org/2000/svg"
@@ -565,16 +542,12 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                       />
                     </svg>
                     Appels d'offres
-                  </a>
                 </Link>
-                <Link href="/supplier/offers">
-                  <a
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                <Link href="/supplier/offers" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                       isCurrentPath("/supplier/offers")
                         ? "bg-primary-50 text-primary"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+                    }`}>
                     <svg
                       className="mr-3 h-5 w-5"
                       xmlns="http://www.w3.org/2000/svg"
@@ -590,16 +563,13 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                       />
                     </svg>
                     Mes offres
-                  </a>
                 </Link>
-                <Link href="/supplier/notifications">
-                  <a
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                <Link href="/supplier/notifications" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                       isCurrentPath("/supplier/notifications")
                         ? "bg-primary-50 text-primary"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+                    }`}>
+                    }`}>
                     <svg
                       className="mr-3 h-5 w-5"
                       xmlns="http://www.w3.org/2000/svg"
@@ -615,7 +585,6 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                       />
                     </svg>
                     Notifications
-                  </a>
                 </Link>
               </>
             )}
@@ -626,14 +595,11 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
                   Service de maintenance
                 </p>
-                <Link href="/technician/maintenance-reports">
-                  <a
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                <Link href="/technician/maintenance-reports" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                       isCurrentPath("/technician/maintenance-reports")
                         ? "bg-primary-50 text-primary"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+                    }`}>
                     <svg
                       className="mr-3 h-5 w-5"
                       xmlns="http://www.w3.org/2000/svg"
@@ -649,16 +615,12 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                       />
                     </svg>
                     Pannes signalées
-                  </a>
                 </Link>
-                <Link href="/technician/interventions">
-                  <a
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                <Link href="/technician/interventions" className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
                       isCurrentPath("/technician/interventions")
                         ? "bg-primary-50 text-primary"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+                    }`}>
                     <svg
                       className="mr-3 h-5 w-5"
                       xmlns="http://www.w3.org/2000/svg"
@@ -674,7 +636,6 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                       />
                     </svg>
                     Mes interventions
-                  </a>
                 </Link>
                 <Link href="/technician/report">
                   <a
@@ -707,8 +668,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">
               Paramètres
             </p>
-            <Link href="/settings">
-              <a className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">
+            <Link href="/settings" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">
                 <svg
                   className="mr-3 h-5 w-5"
                   xmlns="http://www.w3.org/2000/svg"
@@ -730,7 +690,6 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                   />
                 </svg>
                 Paramètres
-              </a>
             </Link>
             <Link href="/help">
               <a className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">

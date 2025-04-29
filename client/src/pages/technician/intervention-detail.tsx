@@ -2,13 +2,13 @@ import AppLayout from "@/layouts/AppLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,43 +23,46 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  WrenchIcon, 
-  Clock, 
-  CheckCircle, 
+import {
+  WrenchIcon,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   ArrowLeft,
   Calendar,
   Save
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { apiService } from "@/lib/apiService";
 
 export default function InterventionDetail() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const interventionId = parseInt(id);
-  
+
   // Form state
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("");
   const [resolution, setResolution] = useState("");
-  
+
   // Fetch intervention details
   const { data: intervention, isLoading: isLoadingIntervention } = useQuery({
-    queryKey: [`/api/interventions/${interventionId}`],
+    queryKey: ['intervention', interventionId],
+    queryFn: () => apiService.getInterventionById(interventionId),
     enabled: !isNaN(interventionId),
   });
 
-  // Fetch maintenance report
+  // Fetch maintenance reports
   const { data: maintenanceReports = [] } = useQuery({
-    queryKey: ["/api/maintenance-reports"],
+    queryKey: ['maintenanceReports'],
+    queryFn: () => apiService.getMaintenanceReports(),
   });
 
   // Fetch resources
   const { data: resources = [] } = useQuery({
-    queryKey: ["/api/resources"],
+    queryKey: ['resources'],
+    queryFn: () => apiService.getResources(),
   });
 
   // Set initial form values when data is loaded
@@ -77,24 +80,21 @@ export default function InterventionDetail() {
 
   // Update intervention mutation
   const updateInterventionMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("PUT", `/api/interventions/${interventionId}`, {
-        notes,
-        status,
-        resolution: status === "completed" ? resolution : null,
-      });
-      return response.json();
-    },
+    mutationFn: () => apiService.updateIntervention(interventionId, {
+      notes,
+      status,
+      resolution: status === "completed" ? resolution : null,
+    }),
     onSuccess: () => {
       toast({
         title: "Intervention mise à jour",
         description: "Les informations ont été enregistrées avec succès.",
         variant: "default",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/interventions/${interventionId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/interventions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-reports"] });
-      
+      queryClient.invalidateQueries({ queryKey: ['intervention', interventionId] });
+      queryClient.invalidateQueries({ queryKey: ['interventions'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceReports'] });
+
       if (status === "completed") {
         navigate("/technician/interventions");
       }
@@ -111,7 +111,7 @@ export default function InterventionDetail() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!notes || !status) {
       toast({
@@ -154,8 +154,8 @@ export default function InterventionDetail() {
           <p className="mt-1 text-sm text-gray-500">
             L'intervention que vous recherchez n'existe pas ou n'est plus disponible.
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-6"
             onClick={() => navigate("/technician/interventions")}
           >
@@ -169,8 +169,8 @@ export default function InterventionDetail() {
 
   return (
     <AppLayout title={`Intervention ${resource ? `sur ${resource.resourceType}` : `#${interventionId}`}`}>
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="mb-6"
         onClick={() => navigate("/technician/interventions")}
       >
@@ -184,12 +184,12 @@ export default function InterventionDetail() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle>Détails</CardTitle>
-              <Badge 
+              <Badge
                 variant={
-                  intervention.status === "completed" 
-                    ? "success" 
-                    : intervention.status === "in_progress" 
-                    ? "outline" 
+                  intervention.status === "completed"
+                    ? "default"
+                    : intervention.status === "in_progress"
+                    ? "outline"
                     : "secondary"
                 }
               >
@@ -203,12 +203,12 @@ export default function InterventionDetail() {
             <div>
               <h3 className="text-sm font-medium text-gray-500">Ressource concernée</h3>
               <p className="mt-1 text-sm">
-                {resource 
-                  ? `${resource.resourceType} (${resource.inventoryNumber})` 
+                {resource
+                  ? `${resource.resourceType} (${resource.inventoryNumber})`
                   : `Ressource #${report?.resourceId || "inconnue"}`}
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium text-gray-500">Date de début</h3>
               <p className="mt-1 text-sm flex items-center gap-2">
@@ -216,7 +216,7 @@ export default function InterventionDetail() {
                 {new Date(intervention.startDate).toLocaleDateString("fr-FR")}
               </p>
             </div>
-            
+
             {intervention.endDate && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Date de fin</h3>
@@ -226,7 +226,7 @@ export default function InterventionDetail() {
                 </p>
               </div>
             )}
-            
+
             {report && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Description du problème</h3>
@@ -234,14 +234,14 @@ export default function InterventionDetail() {
                   {report.description}
                 </p>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge 
+                  <Badge
                     variant={
-                      report.urgency === "critical" 
-                        ? "destructive" 
-                        : report.urgency === "high" 
-                        ? "destructive" 
+                      report.urgency === "critical"
+                        ? "destructive"
+                        : report.urgency === "high"
+                        ? "destructive"
                         : report.urgency === "medium"
-                        ? "warning"
+                        ? "secondary"
                         : "outline"
                     }
                   >
@@ -278,7 +278,7 @@ export default function InterventionDetail() {
                   required
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="status">Statut de l'intervention</Label>
                 <Select value={status} onValueChange={setStatus}>
@@ -292,7 +292,7 @@ export default function InterventionDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {status === "completed" && (
                 <div>
                   <Label htmlFor="resolution">Résolution</Label>
@@ -306,10 +306,10 @@ export default function InterventionDetail() {
                   />
                 </div>
               )}
-              
+
               <div className="flex justify-end">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   size="lg"
                   disabled={updateInterventionMutation.isPending}
                 >
